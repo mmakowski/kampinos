@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spacery po Kampinosie</title>
+    <meta
+      name="description"
+      content="Gdzie chodziliśmy najwięcej."
+    />
+    <link rel="canonical" href="https://varia.mmakowski.com/kampinos/" />
+    <link rel="author" href="https://mmakowski.com" />
+    <meta name="theme-color" content="#172B36" />
+    <meta name="creator" content="Maciek Makowski" />
+    <style>
+      html {
+        height: 100%;
+      }
+
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(to bottom, #172b36 0%, #d9e8e3 100%);
+      }
+
+      #container {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        width: min(70vh, 80%);
+        height: 100%;
+      }
+
+      canvas {
+        display: block;
+        border-radius: 4px;
+        overflow: hidden;
+        width: 100%;
+        margin-top: auto;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+      }
+
+      #made {
+        text-align: center;
+        line-height: 1.5;
+        font-family: monospace;
+        margin-top: auto;
+        margin-bottom: 20px;
+        font-size: 10px;
+      }
+
+      #made a {
+        color: #172b36;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="container">
+      <canvas id="mapCanvas" width="2060" height="925"></canvas>
+      <p id="made">
+        made by <a href="https://mmakowski.com">Maciek Makowski</a> | source on
+        <a href="https://github.com/mmakowski/kampinos">github</a>
+      </p>
+    </div>
+  </body>
+
+  <script src="./GPXParser.js"></script>
+  <script>
+    const tracks = [
+      "activity_5854298332.gpx",
+      "activity_5981487194.gpx",
+      "activity_6301555386.gpx",
+      "activity_6501280191.gpx",
+      "activity_7983069122.gpx",
+      "activity_8698864940.gpx",
+      "activity_9795054251.gpx",
+      "activity_11515457798.gpx",
+      "activity_13400401220.gpx",
+    ]
+    const trackColor = "#0088ff44";
+    const trackWidth = 7;
+    const mapDimensions = {
+        left: 20.2406,
+        top: 52.4263,
+        width: 20.9405 - 20.2406,
+        height: 52.4263 - 52.2346,
+    };
+
+    const canvas = document.getElementById("mapCanvas");
+    const scale = {
+      x: canvas.width / mapDimensions.width,
+      y: canvas.height / mapDimensions.height,
+    };
+
+    const ctx = canvas.getContext("2d", {
+        desynchronized: true,
+    });
+
+    async function parse(filename) {
+        const response = await fetch(`tracks/${filename}`);
+        const gpxText = await response.text();
+        const gpx = new gpxParser();
+        gpx.parse(gpxText);
+        return gpx;
+    }
+
+    function draw(gpx) {
+        ctx.lineWidth = trackWidth;
+        ctx.strokeStyle = trackColor;
+        for (trackIdx in gpx.tracks) {
+            const track = gpx.tracks[trackIdx];
+            let first = true;
+            ctx.beginPath();
+            for (pointIdx in track.points) {
+                const point = translateCoords(track.points[pointIdx]);
+                if (first) {
+                    ctx.moveTo(point.x, point.y);
+                    first = false;
+                } else {
+                    ctx.lineTo(point.x, point.y);
+                }
+            }
+            ctx.stroke();
+        }
+    }
+
+    function translateCoords(trackPoint) {
+        return {
+            x: Math.round((trackPoint.lon - mapDimensions.left) * scale.x),
+            y: Math.round((mapDimensions.top - trackPoint.lat) * scale.y),
+        }
+    }
+
+    function drawTracks() {
+        for (trackIdx in tracks) {
+            parse(tracks[trackIdx]).then(function(gpx) {
+                draw(gpx);
+            });
+        }
+    }
+    var background = new Image();
+    background.src = "map-lores.png";
+    background.onload = function() {
+        ctx.drawImage(background, 0, 0);
+        drawTracks();
+    }
+
+  </script>
+</html>
