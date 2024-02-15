@@ -81,8 +81,12 @@
       "activity_11515457798.gpx",
       "activity_13400401220.gpx",
     ]
-    const trackColor = "#0088ff44";
+    
+    // visual properties
+    const trackColor = "#0088ff88";
     const trackWidth = 7;
+    const offsetFactor = 1;
+
     const mapDimensions = {
         left: 20.2406,
         top: 52.4263,
@@ -108,7 +112,7 @@
         return gpx;
     }
 
-    function draw(gpx) {
+    function draw(gpx, offset) {
         ctx.lineWidth = trackWidth;
         ctx.strokeStyle = trackColor;
         for (trackIdx in gpx.tracks) {
@@ -116,7 +120,7 @@
             let first = true;
             ctx.beginPath();
             for (pointIdx in track.points) {
-                const point = translateCoords(track.points[pointIdx]);
+                const point = translateCoords(track.points[pointIdx], offset);
                 if (first) {
                     ctx.moveTo(point.x, point.y);
                     first = false;
@@ -128,17 +132,18 @@
         }
     }
 
-    function translateCoords(trackPoint) {
+    function translateCoords(trackPoint, offset) {
         return {
-            x: Math.round((trackPoint.lon - mapDimensions.left) * scale.x),
-            y: Math.round((mapDimensions.top - trackPoint.lat) * scale.y),
+            x: Math.round((trackPoint.lon - mapDimensions.left) * scale.x + offset * offsetFactor),
+            y: Math.round((mapDimensions.top - trackPoint.lat) * scale.y + offset * offsetFactor),
         }
     }
 
     function drawTracks() {
         for (trackIdx in tracks) {
+            const offset = trackIdx - (tracks.length / 2);
             parse(tracks[trackIdx]).then(function(gpx) {
-                draw(gpx);
+                draw(gpx, offset);
             });
         }
     }
